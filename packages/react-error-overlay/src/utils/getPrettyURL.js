@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
@@ -29,13 +27,13 @@ function getPrettyURL(
       prettyURL = sourceFileName;
     }
     prettyURL += ':' + sourceLineNumber;
-    // Note: we intentionally skip 0's because they're produced by cheap Webpack maps
+    // Note: we intentionally skip 0's because they're produced by cheap webpack maps
     if (sourceColumnNumber) {
       prettyURL += ':' + sourceColumnNumber;
     }
   } else if (fileName && typeof lineNumber === 'number') {
     prettyURL = fileName + ':' + lineNumber;
-    // Note: we intentionally skip 0's because they're produced by cheap Webpack maps
+    // Note: we intentionally skip 0's because they're produced by cheap webpack maps
     if (columnNumber) {
       prettyURL += ':' + columnNumber;
     }

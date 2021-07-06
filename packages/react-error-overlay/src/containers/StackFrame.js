@@ -1,188 +1,182 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
-import React, { Component } from 'react';
+import React, { useState, useContext } from 'react';
+import { ThemeContext } from '../iframeScript';
 import CodeBlock from './StackFrameCodeBlock';
 import { getPrettyURL } from '../utils/getPrettyURL';
-import { darkGray } from '../styles';
 
-const linkStyle = {
+import type { StackFrame as StackFrameType } from '../utils/stack-frame';
+import type { ErrorLocation } from '../utils/parseCompileError';
+import type { Theme } from '../styles';
+
+const linkStyle = (theme: Theme) => ({
   fontSize: '0.9em',
   marginBottom: '0.9em',
-};
+});
 
-const anchorStyle = {
+const anchorStyle = (theme: Theme) => ({
   textDecoration: 'none',
-  color: darkGray,
+  color: theme.anchorColor,
   cursor: 'pointer',
-};
+});
 
-const codeAnchorStyle = {
+const codeAnchorStyle = (theme: Theme) => ({
   cursor: 'pointer',
-};
+});
 
-const toggleStyle = {
+const toggleStyle = (theme: Theme) => ({
   marginBottom: '1.5em',
-  color: darkGray,
+  color: theme.toggleColor,
   cursor: 'pointer',
   border: 'none',
   display: 'block',
   width: '100%',
   textAlign: 'left',
-  background: '#fff',
+  background: theme.toggleBackground,
   fontFamily: 'Consolas, Menlo, monospace',
   fontSize: '1em',
   padding: '0px',
   lineHeight: '1.5',
-};
+});
 
-class StackFrame extends Component {
-  state = {
-    compiled: false,
+type StackFramePropsType = {|
+  frame: StackFrameType,
+  contextSize: number,
+  critical: boolean,
+  showCode: boolean,
+  editorHandler: (errorLoc: ErrorLocation) => void,
+|};
+
+function StackFrame(props: StackFramePropsType) {
+  const theme = useContext(ThemeContext);
+  const [compiled, setCompiled] = useState(false);
+
+  const toggleCompiled = () => {
+    setCompiled(!compiled);
   };
 
-  toggleCompiled = () => {
-    this.setState(state => ({
-      compiled: !state.compiled,
-    }));
-  };
-
-  canOpenInEditor() {
-    if (!this.props.launchEditorEndpoint) {
-      return;
-    }
-    const { _originalFileName: sourceFileName } = this.props.frame;
+  const getErrorLocation = (): ErrorLocation | null => {
+    const {
+      _originalFileName: fileName,
+      _originalLineNumber: lineNumber,
+    } = props.frame;
     // Unknown file
-    if (!sourceFileName) {
-      return false;
+    if (!fileName) {
+      return null;
     }
     // e.g. "/path-to-my-app/webpack/bootstrap eaddeb46b67d75e4dfc1"
-    const isInternalWebpackBootstrapCode =
-      sourceFileName.trim().indexOf(' ') !== -1;
+    const isInternalWebpackBootstrapCode = fileName.trim().indexOf(' ') !== -1;
     if (isInternalWebpackBootstrapCode) {
-      return false;
+      return null;
     }
     // Code is in a real file
-    return true;
-  }
+    return { fileName, lineNumber: lineNumber || 1 };
+  };
 
-  openInEditor = () => {
-    if (!this.canOpenInEditor()) {
+  const editorHandler = () => {
+    const errorLoc = getErrorLocation();
+    if (!errorLoc) {
       return;
     }
-    const {
-      _originalFileName: sourceFileName,
-      _originalLineNumber: sourceLineNumber,
-    } = this.props.frame;
-    // Keep this in sync with react-error-overlay/middleware.js
-    fetch(
-      `${this.props.launchEditorEndpoint}?fileName=` +
-        window.encodeURIComponent(sourceFileName) +
-        '&lineNumber=' +
-        window.encodeURIComponent(sourceLineNumber || 1)
-    ).then(() => {}, () => {});
+    props.editorHandler(errorLoc);
   };
 
-  onKeyDown = (e: SyntheticKeyboardEvent) => {
+  const onKeyDown = (e: SyntheticKeyboardEvent<any>) => {
     if (e.key === 'Enter') {
-      this.openInEditor();
+      editorHandler();
     }
   };
 
-  render() {
-    const { frame, contextSize, critical, showCode } = this.props;
-    const {
-      fileName,
-      lineNumber,
-      columnNumber,
-      _scriptCode: scriptLines,
-      _originalFileName: sourceFileName,
-      _originalLineNumber: sourceLineNumber,
-      _originalColumnNumber: sourceColumnNumber,
-      _originalScriptCode: sourceLines,
-    } = frame;
-    const functionName = frame.getFunctionName();
+  const { frame, contextSize, critical, showCode } = props;
+  const {
+    fileName,
+    lineNumber,
+    columnNumber,
+    _scriptCode: scriptLines,
+    _originalFileName: sourceFileName,
+    _originalLineNumber: sourceLineNumber,
+    _originalColumnNumber: sourceColumnNumber,
+    _originalScriptCode: sourceLines,
+  } = frame;
+  const functionName = frame.getFunctionName();
 
-    const compiled = this.state.compiled;
-    const url = getPrettyURL(
-      sourceFileName,
-      sourceLineNumber,
-      sourceColumnNumber,
-      fileName,
-      lineNumber,
-      columnNumber,
-      compiled
-    );
+  const url = getPrettyURL(
+    sourceFileName,
+    sourceLineNumber,
+    sourceColumnNumber,
+    fileName,
+    lineNumber,
+    columnNumber,
+    compiled
+  );
 
-    let codeBlockProps = null;
-    if (showCode) {
-      if (
-        compiled &&
-        scriptLines &&
-        scriptLines.length !== 0 &&
-        lineNumber != null
-      ) {
-        codeBlockProps = {
-          lines: scriptLines,
-          lineNum: lineNumber,
-          columnNum: columnNumber,
-          contextSize,
-          main: critical,
-        };
-      } else if (
-        !compiled &&
-        sourceLines &&
-        sourceLines.length !== 0 &&
-        sourceLineNumber != null
-      ) {
-        codeBlockProps = {
-          lines: sourceLines,
-          lineNum: sourceLineNumber,
-          columnNum: sourceColumnNumber,
-          contextSize,
-          main: critical,
-        };
-      }
+  let codeBlockProps = null;
+  if (showCode) {
+    if (
+      compiled &&
+      scriptLines &&
+      scriptLines.length !== 0 &&
+      lineNumber != null
+    ) {
+      codeBlockProps = {
+        lines: scriptLines,
+        lineNum: lineNumber,
+        columnNum: columnNumber,
+        contextSize,
+        main: critical,
+      };
+    } else if (
+      !compiled &&
+      sourceLines &&
+      sourceLines.length !== 0 &&
+      sourceLineNumber != null
+    ) {
+      codeBlockProps = {
+        lines: sourceLines,
+        lineNum: sourceLineNumber,
+        columnNum: sourceColumnNumber,
+        contextSize,
+        main: critical,
+      };
     }
-
-    const canOpenInEditor = this.canOpenInEditor();
-    return (
-      <div>
-        <div>
-          {functionName}
-        </div>
-        <div style={linkStyle}>
-          <a
-            style={canOpenInEditor ? anchorStyle : null}
-            onClick={canOpenInEditor ? this.openInEditor : null}
-            onKeyDown={canOpenInEditor ? this.onKeyDown : null}
-            tabIndex={canOpenInEditor ? '0' : null}
-          >
-            {url}
-          </a>
-        </div>
-        {codeBlockProps &&
-          <span>
-            <a
-              onClick={canOpenInEditor ? this.openInEditor : null}
-              style={canOpenInEditor ? codeAnchorStyle : null}
-            >
-              <CodeBlock {...codeBlockProps} />
-            </a>
-            <button style={toggleStyle} onClick={this.toggleCompiled}>
-              {'View ' + (compiled ? 'source' : 'compiled')}
-            </button>
-          </span>}
-      </div>
-    );
   }
+
+  const canOpenInEditor =
+    getErrorLocation() !== null && props.editorHandler !== null;
+  return (
+    <div>
+      <div>{functionName}</div>
+      <div style={linkStyle(theme)}>
+        <span
+          style={canOpenInEditor ? anchorStyle(theme) : null}
+          onClick={canOpenInEditor ? editorHandler : null}
+          onKeyDown={canOpenInEditor ? onKeyDown : null}
+          tabIndex={canOpenInEditor ? '0' : null}
+        >
+          {url}
+        </span>
+      </div>
+      {codeBlockProps && (
+        <span>
+          <span
+            onClick={canOpenInEditor ? editorHandler : null}
+            style={canOpenInEditor ? codeAnchorStyle(theme) : null}
+          >
+            <CodeBlock {...codeBlockProps} />
+          </span>
+          <button style={toggleStyle(theme)} onClick={toggleCompiled}>
+            {'View ' + (compiled ? 'source' : 'compiled')}
+          </button>
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default StackFrame;

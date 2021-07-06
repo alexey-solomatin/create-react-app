@@ -1,17 +1,16 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
-import React from 'react';
-import { redTransparent, yellowTransparent } from '../styles';
+import React, { useContext } from 'react';
+import { ThemeContext } from '../iframeScript';
 
 const _preStyle = {
+  position: 'relative',
   display: 'block',
   padding: '0.5em',
   marginTop: '0.5em',
@@ -19,16 +18,6 @@ const _preStyle = {
   overflowX: 'auto',
   whiteSpace: 'pre-wrap',
   borderRadius: '0.25rem',
-};
-
-const primaryPreStyle = {
-  ..._preStyle,
-  backgroundColor: redTransparent,
-};
-
-const secondaryPreStyle = {
-  ..._preStyle,
-  backgroundColor: yellowTransparent,
 };
 
 const codeStyle = {
@@ -40,9 +29,20 @@ type CodeBlockPropsType = {|
   codeHTML: string,
 |};
 
-function CodeBlock(props: CodeBlockPropsType) {
-  const preStyle = props.main ? primaryPreStyle : secondaryPreStyle;
-  const codeBlock = { __html: props.codeHTML };
+function CodeBlock({ main, codeHTML }: CodeBlockPropsType) {
+  const theme = useContext(ThemeContext);
+  const primaryPreStyle = {
+    ..._preStyle,
+    backgroundColor: theme.primaryPreBackground,
+    color: theme.primaryPreColor,
+  };
+  const secondaryPreStyle = {
+    ..._preStyle,
+    backgroundColor: theme.secondaryPreBackground,
+    color: theme.secondaryPreColor,
+  };
+  const preStyle = main ? primaryPreStyle : secondaryPreStyle;
+  const codeBlock = { __html: codeHTML };
 
   return (
     <pre style={preStyle}>

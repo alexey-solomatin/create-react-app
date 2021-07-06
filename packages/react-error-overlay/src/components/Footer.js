@@ -1,22 +1,21 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
-import React from 'react';
-import { darkGray } from '../styles';
+import React, { useContext } from 'react';
+import { ThemeContext } from '../iframeScript';
+import type { Theme } from '../styles';
 
-const footerStyle = {
+const footerStyle = (theme: Theme) => ({
   fontFamily: 'sans-serif',
-  color: darkGray,
+  color: theme.footer,
   marginTop: '0.5rem',
   flex: '0 0 auto',
-};
+});
 
 type FooterPropsType = {|
   line1: string,
@@ -24,8 +23,9 @@ type FooterPropsType = {|
 |};
 
 function Footer(props: FooterPropsType) {
+  const theme = useContext(ThemeContext);
   return (
-    <div style={footerStyle}>
+    <div style={footerStyle(theme)}>
       {props.line1}
       <br />
       {props.line2}

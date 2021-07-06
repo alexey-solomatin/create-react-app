@@ -1,17 +1,18 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
-import React, { Component } from 'react';
-import { black } from '../styles';
+import React, { useContext, useEffect } from 'react';
+import { ThemeContext } from '../iframeScript';
 
-const overlayStyle = {
+import type { Node as ReactNode } from 'react';
+import type { Theme } from '../styles';
+
+const overlayStyle = (theme: Theme) => ({
   position: 'relative',
   display: 'inline-flex',
   flexDirection: 'column',
@@ -28,47 +29,50 @@ const overlayStyle = {
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
   lineHeight: 1.5,
-  color: black,
-};
+  color: theme.color,
+});
 
-class ErrorOverlay extends Component {
-  iframeWindow: window = null;
+type ErrorOverlayPropsType = {|
+  children: ReactNode,
+  shortcutHandler?: (eventKey: string) => void,
+|};
 
-  getIframeWindow = (element: HTMLDivElement) => {
+let iframeWindow: window = null;
+
+function ErrorOverlay(props: ErrorOverlayPropsType) {
+  const theme = useContext(ThemeContext);
+
+  const getIframeWindow = (element: ?HTMLDivElement) => {
     if (element) {
       const document = element.ownerDocument;
-      this.iframeWindow = document.defaultView;
+      iframeWindow = document.defaultView;
     }
   };
+  const { shortcutHandler } = props;
 
-  onKeyDown = (e: KeyboardEvent) => {
-    const { shortcutHandler } = this.props;
-    if (shortcutHandler) {
-      shortcutHandler(e.key);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (shortcutHandler) {
+        shortcutHandler(e.key);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    if (iframeWindow) {
+      iframeWindow.addEventListener('keydown', onKeyDown);
     }
-  };
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      if (iframeWindow) {
+        iframeWindow.removeEventListener('keydown', onKeyDown);
+      }
+    };
+  }, [shortcutHandler]);
 
-  componentDidMount() {
-    window.addEventListener('keydown', this.onKeyDown);
-    if (this.iframeWindow) {
-      this.iframeWindow.addEventListener('keydown', this.onKeyDown);
-    }
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.onKeyDown);
-    if (this.iframeWindow) {
-      this.iframeWindow.removeEventListener('keydown', this.onKeyDown);
-    }
-  }
-
-  render() {
-    return (
-      <div style={overlayStyle} ref={this.getIframeWindow}>
-        {this.props.children}
-      </div>
-    );
-  }
+  return (
+    <div style={overlayStyle(theme)} ref={getIframeWindow}>
+      {props.children}
+    </div>
+  );
 }
 
 export default ErrorOverlay;

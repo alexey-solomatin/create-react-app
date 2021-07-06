@@ -1,18 +1,17 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
-import React from 'react';
-import { black } from '../styles';
+import React, { useContext } from 'react';
+import { ThemeContext } from '../iframeScript';
+import type { Theme } from '../styles';
 
-const closeButtonStyle = {
-  color: black,
+const closeButtonStyle = (theme: Theme) => ({
+  color: theme.closeColor,
   lineHeight: '1rem',
   fontSize: '1.5rem',
   padding: '1rem',
@@ -20,15 +19,19 @@ const closeButtonStyle = {
   position: 'absolute',
   right: 0,
   top: 0,
-};
+});
 
-type CloseCallback = () => void;
-function CloseButton({ close }: {| close: CloseCallback |}) {
+type CloseButtonPropsType = {|
+  close: () => void,
+|};
+
+function CloseButton({ close }: CloseButtonPropsType) {
+  const theme = useContext(ThemeContext);
   return (
     <span
       title="Click or press Escape to dismiss."
       onClick={close}
-      style={closeButtonStyle}
+      style={closeButtonStyle(theme)}
     >
       ×
     </span>

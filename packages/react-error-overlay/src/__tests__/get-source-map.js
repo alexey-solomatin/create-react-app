@@ -1,10 +1,8 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 import { getSourceMap } from '../utils/getSourceMap';
@@ -54,12 +52,14 @@ test('error on a source map with unsupported encoding', async () => {
   const file = fs
     .readFileSync(resolve(__dirname, '../../fixtures/junk-inline.mjs'))
     .toString('utf8');
+  let error;
   try {
     await getSourceMap('/', file);
   } catch (e) {
-    expect(e instanceof Error).toBe(true);
-    expect(e.message).toBe(
-      'Sorry, non-base64 inline source-map encoding is not supported.'
-    );
+    error = e;
   }
+  expect(error instanceof Error).toBe(true);
+  expect(error.message).toBe(
+    'Sorry, non-base64 inline source-map encoding is not supported.'
+  );
 });

@@ -1,78 +1,81 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
- * All rights reserved.
  *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 
 /* @flow */
-import React, { Component } from 'react';
-import { black } from '../styles';
+import React, { useState, useContext } from 'react';
+import { ThemeContext } from '../iframeScript';
+
+import type { Element as ReactElement } from 'react';
+import type { Theme } from '../styles';
 
 const _collapsibleStyle = {
-  color: black,
   cursor: 'pointer',
   border: 'none',
   display: 'block',
   width: '100%',
   textAlign: 'left',
-  background: '#fff',
   fontFamily: 'Consolas, Menlo, monospace',
   fontSize: '1em',
   padding: '0px',
   lineHeight: '1.5',
 };
 
-const collapsibleCollapsedStyle = {
+const collapsibleCollapsedStyle = (theme: Theme) => ({
   ..._collapsibleStyle,
+  color: theme.color,
+  background: theme.background,
   marginBottom: '1.5em',
-};
+});
 
-const collapsibleExpandedStyle = {
+const collapsibleExpandedStyle = (theme: Theme) => ({
   ..._collapsibleStyle,
+  color: theme.color,
+  background: theme.background,
   marginBottom: '0.6em',
-};
+});
 
-class Collapsible extends Component {
-  state = {
-    collapsed: true,
+type CollapsiblePropsType = {|
+  children: ReactElement<any>[],
+|};
+
+function Collapsible(props: CollapsiblePropsType) {
+  const theme = useContext(ThemeContext);
+  const [collapsed, setCollapsed] = useState(true);
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
   };
 
-  toggleCollaped = () => {
-    this.setState(state => ({
-      collapsed: !state.collapsed,
-    }));
-  };
-
-  render() {
-    const count = this.props.children.length;
-    const collapsed = this.state.collapsed;
-    return (
-      <div>
+  const count = props.children.length;
+  return (
+    <div>
+      <button
+        onClick={toggleCollapsed}
+        style={
+          collapsed
+            ? collapsibleCollapsedStyle(theme)
+            : collapsibleExpandedStyle(theme)
+        }
+      >
+        {(collapsed ? '▶' : '▼') +
+          ` ${count} stack frames were ` +
+          (collapsed ? 'collapsed.' : 'expanded.')}
+      </button>
+      <div style={{ display: collapsed ? 'none' : 'block' }}>
+        {props.children}
         <button
-          onClick={this.toggleCollaped}
-          style={
-            collapsed ? collapsibleCollapsedStyle : collapsibleExpandedStyle
-          }
+          onClick={toggleCollapsed}
+          style={collapsibleExpandedStyle(theme)}
         >
-          {(collapsed ? '▶' : '▼') +
-            ` ${count} stack frames were ` +
-            (collapsed ? 'collapsed.' : 'expanded.')}
+          {`▲ ${count} stack frames were expanded.`}
         </button>
-        <div style={{ display: collapsed ? 'none' : 'block' }}>
-          {this.props.children}
-          <button
-            onClick={this.toggleCollaped}
-            style={collapsibleExpandedStyle}
-          >
-            {`▲ ${count} stack frames were expanded.`}
-          </button>
-        </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
 export default Collapsible;
